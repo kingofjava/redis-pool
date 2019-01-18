@@ -12,7 +12,11 @@ public class JedisPooledObject implements org.apache.commons.pool2.PooledObject<
     private Jedis object;
     private Date createTime;
     private long activeTimeMillis;
-    
+
+    public JedisPooledObject(Jedis object) {
+        this.object = object;
+    }
+
     @Override
     public Jedis getObject() {
         return object;
