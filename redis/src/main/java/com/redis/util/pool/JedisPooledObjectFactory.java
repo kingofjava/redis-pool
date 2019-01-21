@@ -11,6 +11,10 @@ public class JedisPooledObjectFactory implements PooledObjectFactory<Jedis> {
     private Integer db;
     private String clientName;
 
+    public JedisPooledObjectFactory (String host, int port) {
+        this.hostAndPort = new RedisHostAndPort(host, port);
+    }
+
     @Override
     public PooledObject<Jedis> makeObject() {
         Jedis jedis = new Jedis(hostAndPort.getHost(), hostAndPort.getPort());

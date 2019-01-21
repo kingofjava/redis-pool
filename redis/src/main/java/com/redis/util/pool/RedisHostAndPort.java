@@ -6,6 +6,11 @@ public class RedisHostAndPort {
 
     private Integer port;
 
+    public RedisHostAndPort(String host, Integer port) {
+        this.host = host;
+        this.port = port;
+    }
+
     public String getHost() {
         return host;
     }
