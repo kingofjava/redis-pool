@@ -6,7 +6,7 @@ import org.apache.commons.pool2.impl.DefaultPooledObject;
 import redis.clients.jedis.BinaryJedis;
 import redis.clients.jedis.Jedis;
 
-public class JedisPooledObjectFactory implements PooledObjectFactory<Jedis> {
+public class JedisPooledObjectFactory implements PooledObjectFactory<WJedis> {
     private RedisHostAndPort hostAndPort;
     private String password;
     private Integer db;
@@ -24,7 +24,7 @@ public class JedisPooledObjectFactory implements PooledObjectFactory<Jedis> {
     }
 
     @Override
-    public PooledObject<Jedis> makeObject() {
+    public PooledObject<WJedis> makeObject() {
         WJedis jedis = new WJedis(hostAndPort.getHost(), hostAndPort.getPort());
         if (null != password) {
             jedis.auth(password);
@@ -39,17 +39,17 @@ public class JedisPooledObjectFactory implements PooledObjectFactory<Jedis> {
     }
 
     @Override
-    public void destroyObject(PooledObject<Jedis> pooledObject) throws Exception {
+    public void destroyObject(PooledObject<WJedis> pooledObject) throws Exception {
 
     }
 
     @Override
-    public boolean validateObject(PooledObject<Jedis> pooledObject) {
+    public boolean validateObject(PooledObject<WJedis> pooledObject) {
         return false;
     }
 
     @Override
-    public void activateObject(PooledObject<Jedis> pooledObject) throws Exception {
+    public void activateObject(PooledObject<WJedis> pooledObject) throws Exception {
         BinaryJedis jedis = pooledObject.getObject();
         if (jedis.getDB().intValue() != this.db) {
             jedis.select(this.db);
@@ -57,7 +57,7 @@ public class JedisPooledObjectFactory implements PooledObjectFactory<Jedis> {
     }
 
     @Override
-    public void passivateObject(PooledObject<Jedis> pooledObject) throws Exception {
+    public void passivateObject(PooledObject<WJedis> pooledObject) throws Exception {
 
     }
 }
