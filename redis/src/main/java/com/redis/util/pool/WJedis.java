@@ -10,6 +10,7 @@ public class WJedis extends Jedis {
 
     @Override
     public String get(String key) {
+        String str = super.get(key);
         System.out.println("begin to get value by key :"+key);
         try {
             Thread.sleep(20000);
@@ -17,6 +18,6 @@ public class WJedis extends Jedis {
             e.printStackTrace();
         }
         System.out.println("get value sleep end ...,key is :"+key);
-        return super.get(key);
+        return str;
     }
 }
