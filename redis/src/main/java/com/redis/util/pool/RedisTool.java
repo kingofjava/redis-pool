@@ -17,6 +17,12 @@ public class RedisTool {
     private static final String GET_RANGE_PRE = "$0";
     private static final String INCR_ERROR_PRE = "-ERR";
     private static final String LLEN_ERROR_PRE = "-WRONGTYPE";
+    private static final String DATA_0 = "*0";
+    private static final String NX = "NX";
+    private static final String PX = "PX";
+    private static final String EX = "EX";
+    private static final String XX = "XX";
+
 
     public RedisTool(String host, int port) throws IOException {
         socket = new Socket(host, port);
@@ -62,6 +68,40 @@ public class RedisTool {
         AssertParam(key);
         AssertParam(value);
         String command = "set " + key + KONG_GE + value + RN;
+        sendCommand(command);
+        byte[] bytes = getResult();
+        String resultStr = new String(bytes);
+        int index = resultStr.lastIndexOf(RN);
+        return resultStr.substring(1, index);
+    }
+
+    public String set(String key, String value, String nxxx) throws IOException {
+        AssertParam(key);
+        AssertParam(value);
+        if (!NX.equalsIgnoreCase(nxxx) && !XX.equalsIgnoreCase(nxxx)) {
+            throw new IllegalArgumentException();
+        }
+        String command = "set " + key + KONG_GE + value + KONG_GE + nxxx + RN;
+        sendCommand(command);
+        byte[] bytes = getResult();
+        String resultStr = new String(bytes);
+        int index = resultStr.lastIndexOf(RN);
+        return resultStr.substring(1, index);
+    }
+
+    public String set(String key, String value, String nxxx, String expx, int time) throws IOException {
+        AssertParam(key);
+        AssertParam(value);
+        if (!NX.equalsIgnoreCase(nxxx) && !XX.equalsIgnoreCase(nxxx)) {
+            throw new IllegalArgumentException();
+        }
+        if (!EX.equalsIgnoreCase(expx) && !PX.equalsIgnoreCase(expx)) {
+            throw new IllegalArgumentException();
+        }
+        if (time <= 0) {
+            throw new IllegalArgumentException();
+        }
+        String command = "set " + key + KONG_GE + value + KONG_GE + nxxx + KONG_GE + expx + KONG_GE + time + RN;
         sendCommand(command);
         byte[] bytes = getResult();
         String resultStr = new String(bytes);
@@ -521,6 +561,7 @@ public class RedisTool {
 
     /**
      * 获取list 的长度
+     *
      * @param key
      * @return
      * @throws IOException
@@ -539,9 +580,174 @@ public class RedisTool {
         return Integer.valueOf(resultStr.substring(1, index));
     }
 
+    /**
+     * 返回列表 key 中，下标为 index 的元素。
+     * <p>
+     * 下标(index)参数 start 和 stop 都以 0 为底，也就是说，以 0 表示列表的第一个元素，以 1 表示列表的第二个元素，以此类推。
+     * <p>
+     * 你也可以使用负数下标，以 -1 表示列表的最后一个元素， -2 表示列表的倒数第二个元素，以此类推。
+     * <p>
+     * 如果 key 不是列表类型，返回一个错误。
+     *
+     * @param key
+     * @param index
+     * @return
+     * @throws IOException
+     */
+    public String lindex(String key, int index) throws IOException {
+        AssertParam(key);
+        String command = "lindex " + key + KONG_GE + index + RN;
+        sendCommand(command);
+        byte[] resultBytes = getResult();
+        String respStr = new String(resultBytes);
+        if (respStr.startsWith(LLEN_ERROR_PRE)) {
+            //todo 换一个异常
+            throw new IllegalArgumentException();
+        }
+        if (respStr.startsWith(GET_PRE)) {
+            return null;
+        }
+        String[] resultArray = respStr.split(RN);
+        return resultArray[1];
+    }
+
+    /**
+     * 将值 value 插入到列表 key 当中，位于值 pivot 之前或之后。
+     * <p>
+     * 当 pivot 不存在于列表 key 时，不执行任何操作。
+     * <p>
+     * 当 key 不存在时， key 被视为空列表，不执行任何操作。
+     * <p>
+     * 如果 key 不是列表类型，返回一个错误。
+     * <p>
+     * 返回值
+     * 如果命令执行成功，返回插入操作完成之后，列表的长度。 如果没有找到 pivot ，返回 -1 。 如果 key 不存在或为空列表，返回 0 。
+     *
+     * @param key
+     * @param where
+     * @param povit
+     * @param value
+     * @return
+     * @throws IOException
+     */
+    public Long linsert(String key, POSITION where, String povit, String value) throws IOException {
+        AssertParam(key);
+        AssertParam(povit);
+        AssertParam(value);
+        String command = "linsert " + key + KONG_GE + where.getDesc() + KONG_GE + povit + KONG_GE + value + RN;
+        sendCommand(command);
+        byte[] resultBytes = getResult();
+        String respStr = new String(resultBytes);
+        if (respStr.startsWith(LLEN_ERROR_PRE)) {
+            //todo 换一个异常
+            throw new IllegalArgumentException();
+        }
+        int index = respStr.lastIndexOf(RN);
+        return Long.valueOf(respStr.substring(1, index));
+    }
+
+    /**
+     * 将列表 key 下标为 index 的元素的值设置为 value 。
+     * <p>
+     * 当 index 参数超出范围，或对一个空列表( key 不存在)进行 LSET 时，返回一个错误。
+     * <p>
+     * 关于列表下标的更多信息，请参考 LINDEX key index 命令。
+     * <p>
+     * 返回值
+     * 操作成功返回 ok ，否则返回错误信息。
+     *
+     * @param key
+     * @param index
+     * @param value
+     * @return
+     * @throws IOException
+     */
+    public String lset(String key, int index, String value) throws IOException {
+        AssertParam(key);
+        AssertParam(value);
+        String command = "lset " + key + KONG_GE + index + KONG_GE + value + RN;
+        sendCommand(command);
+        byte[] resultBytes = getResult();
+        String respStr = new String(resultBytes);
+        if (respStr.startsWith(INCR_ERROR_PRE)) {
+            //todo 换一个异常
+            throw new IllegalArgumentException();
+        }
+        int indexStart = respStr.lastIndexOf(RN);
+        return respStr.substring(1, indexStart);
+    }
+
+    /**
+     * 返回列表 key 中指定区间内的元素，区间以偏移量 start 和 stop 指定。
+     * <p>
+     * 下标(index)参数 start 和 stop 都以 0 为底，也就是说，以 0 表示列表的第一个元素，以 1 表示列表的第二个元素，以此类推。
+     * <p>
+     * 你也可以使用负数下标，以 -1 表示列表的最后一个元素， -2 表示列表的倒数第二个元素，以此类推。
+     *
+     * @param key
+     * @param start
+     * @param stop
+     * @return
+     * @throws IOException
+     */
+    public List<String> lrange(String key, int start, int stop) throws IOException {
+        AssertParam(key);
+        String command = "lrange " + key + KONG_GE + start + KONG_GE + stop + RN;
+        sendCommand(command);
+        byte[] resultBytes = getResult();
+        String respStr = new String(resultBytes);
+        String[] resultArray = respStr.split(RN);
+        if (respStr.startsWith(LLEN_ERROR_PRE)) {
+            //todo 换一个异常
+            throw new IllegalArgumentException();
+        }
+        if (respStr.startsWith(DATA_0)) {
+            return null;
+        }
+        List<String> valueList = new ArrayList<>();
+        for (int i = 1; i < resultArray.length; ) {
+            valueList.add(resultArray[i + 1]);
+            i += 2;
+        }
+        return valueList;
+    }
+
+    /**
+     * 对一个列表进行修剪(trim)，就是说，让列表只保留指定区间内的元素，不在指定区间之内的元素都将被删除。
+     * <p>
+     * 举个例子，执行命令 LTRIM list 0 2 ，表示只保留列表 list 的前三个元素，其余元素全部删除。
+     * <p>
+     * 下标(index)参数 start 和 stop 都以 0 为底，也就是说，以 0 表示列表的第一个元素，以 1 表示列表的第二个元素，以此类推。
+     * <p>
+     * 你也可以使用负数下标，以 -1 表示列表的最后一个元素， -2 表示列表的倒数第二个元素，以此类推。
+     * <p>
+     * 当 key 不是列表类型时，返回一个错误。
+     *
+     * @param key
+     * @param start
+     * @param stop
+     * @return
+     * @throws IOException
+     */
+    public String ltrim(String key, int start, int stop) throws IOException {
+        AssertParam(key);
+        String command = "ltrim " + key + KONG_GE + start + KONG_GE + stop + RN;
+        sendCommand(command);
+        byte[] resultBytes = getResult();
+        String respStr = new String(resultBytes);
+        if (respStr.startsWith(LLEN_ERROR_PRE)) {
+            //todo 换一个异常
+            throw new IllegalArgumentException();
+        }
+        int indexStart = respStr.lastIndexOf(RN);
+        return respStr.substring(1, indexStart);
+    }
+
+    //todo blpop,brpop,brpoplpush命令
+
     public static void main(String[] args) throws IOException {
         RedisTool redisTool = new RedisTool("127.0.0.1", 6379);
-        System.out.println(redisTool.llen("jjj"));
+        System.out.println(redisTool.set("setnxx", "hee", "nx", "ex", 1));
         System.out.println(redisTool.incrbyfloat("dadada", 3.6f));
         System.out.println(redisTool.getrange("sun", 1, 4));
         System.out.println(redisTool.setrange("sun", 1, "test"));
