@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 public class RedisTool {
@@ -745,9 +746,106 @@ public class RedisTool {
 
     //todo blpop,brpop,brpoplpush命令
 
+    public Long sadd(String key, String... values) throws IOException {
+        AssertParam(key);
+        if (null == values || values.length == 0) {
+            // todo 换一个异常
+            throw new IllegalArgumentException();
+        }
+        for (String v : values) {
+            AssertParam(v);
+        }
+        String command = "sadd " + key + KONG_GE;
+        for (String v : values) {
+            command += (v + KONG_GE);
+        }
+        command = command.trim();
+        command += RN;
+        sendCommand(command);
+        byte[] bytes = getResult();
+        String resultStr = new String(bytes);
+        if (resultStr.startsWith(LLEN_ERROR_PRE)) {
+            //todo 换一个异常
+            throw new IllegalArgumentException();
+        }
+        int index = resultStr.lastIndexOf(RN);
+        return Long.valueOf(resultStr.substring(1, index));
+    }
+
+    public boolean sismember(String key, String value) throws IOException {
+        AssertParam(key);
+        AssertParam(value);
+        String command = "sismember " + key + KONG_GE + value + RN;
+        sendCommand(command);
+        byte[] resultBytes = getResult();
+        String respStr = new String(resultBytes);
+        if (respStr.startsWith(LLEN_ERROR_PRE)) {
+            //todo 换一个异常
+            throw new IllegalArgumentException();
+        }
+        int index = respStr.lastIndexOf(RN);
+        return "1".equals(respStr.substring(1, index));
+    }
+
+    public List<String> spop(String key, int count) throws IOException {
+        AssertParam(key);
+        if (count <= 0) {
+            //todo 换一个异常
+            throw new IllegalArgumentException();
+        }
+        String command = "spop " + key + KONG_GE + count + RN;
+        sendCommand(command);
+        byte[] resultBytes = getResult();
+        String respStr = new String(resultBytes);
+        if (respStr.startsWith(LLEN_ERROR_PRE)) {
+            //todo 换一个异常
+            throw new IllegalArgumentException();
+        }
+        String[] resList = respStr.split(RN);
+        int resLength = Integer.valueOf(resList[0].substring(1));
+        List<String> result = new LinkedList<>();
+        if (resLength == 0) {
+            return null;
+        } else {
+            for (int i = 0; i < resLength; i++) {
+                result.add(resList[2 * i + 2]);
+            }
+        }
+        return result;
+    }
+
+    public List<String> srandmember(String key, int count) throws IOException {
+        AssertParam(key);
+        if (count <= 0) {
+            //todo 换一个异常
+            throw new IllegalArgumentException();
+        }
+        String command = "srandmember " + key + KONG_GE + count + RN;
+        sendCommand(command);
+        byte[] resultBytes = getResult();
+        String respStr = new String(resultBytes);
+        if (respStr.startsWith(LLEN_ERROR_PRE)) {
+            //todo 换一个异常
+            throw new IllegalArgumentException();
+        }
+        String[] resList = respStr.split(RN);
+        int resLength = Integer.valueOf(resList[0].substring(1));
+        List<String> result = new LinkedList<>();
+        if (resLength == 0) {
+            return null;
+        } else {
+            for (int i = 0; i < resLength; i++) {
+                result.add(resList[2 * i + 2]);
+            }
+        }
+        return result;
+    }
+
     public static void main(String[] args) throws IOException {
+//        Jedis jedis = new Jedis("127.0.0.1", 6379);
+//        jedis.sadd("0219set", null);
         RedisTool redisTool = new RedisTool("127.0.0.1", 6379);
-        System.out.println(redisTool.set("setnxx", "hee", "nx", "ex", 1));
+        System.out.println(redisTool.srandmember("0219set", 2));
         System.out.println(redisTool.incrbyfloat("dadada", 3.6f));
         System.out.println(redisTool.getrange("sun", 1, 4));
         System.out.println(redisTool.setrange("sun", 1, "test"));
